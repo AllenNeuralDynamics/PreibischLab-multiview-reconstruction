@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.google.gson.GsonBuilder;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.GzipCompression;
@@ -149,6 +150,9 @@ public class ExportN5API implements ImgExport
 	@Override
 	public String getDescription() { return "ZARR/N5/HDF5 export using N5-API"; }
 
+	public void getTopLevelOMEMetadata(){
+
+	}
 	@Override
 	public <T extends RealType<T> & NativeType<T>> boolean exportImage(
 			RandomAccessibleInterval<T> imgInterval,
@@ -167,7 +171,7 @@ public class ExportN5API implements ImgExport
 				if ( storageType == StorageType.N5 )
 					driverVolumeWriter = new N5FSWriter(path);
 				else if ( storageType == StorageType.ZARR )
-					driverVolumeWriter = new N5ZarrWriter(path);
+					driverVolumeWriter = new N5ZarrWriter(path, new GsonBuilder().setPrettyPrinting(), "/");
 				else if ( storageType == StorageType.HDF5 )
 				{
 					final File dir = new File( path ).getParentFile();
