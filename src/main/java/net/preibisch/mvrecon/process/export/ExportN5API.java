@@ -23,6 +23,7 @@
 package net.preibisch.mvrecon.process.export;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
@@ -32,7 +33,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import bdv.img.omezarr.Multiscales;
+import bdv.img.omezarr.Omero;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.GzipCompression;
@@ -40,6 +45,7 @@ import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Writer;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
+import org.janelia.saalfeldlab.n5.metadata.MultiscaleMetadata;
 import org.janelia.saalfeldlab.n5.zarr.N5ZarrWriter;
 
 import bdv.export.ProposeMipmaps;
@@ -257,11 +263,42 @@ public class ExportN5API implements ImgExport
 					compression );
 
 			driverVolumeWriter.setAttribute( dataset, "min", bb.minAsLongArray() );
+
 		}
 		catch ( Exception e )
 		{
 			IOFunctions.println( "Couldn't create " + storageType + " container '" + path + "': " + e );
 			return false;
+		}
+		/*
+		Write OME-zarr metadata first here, then move to standalone function
+		 */
+		if (storageType == StorageType.ZARR)
+		{
+			IOFunctions.println( "Writing OME-Zarr metadata..." );
+			Multiscales multiscales = new Multiscales();
+			Omero omero = new Omero();
+			/*
+			Fill these structures with plausible image data here.
+			 */
+			Multiscales.Dataset s0 = new Multiscales.Dataset();
+			s0.path = "s0";
+
+			File omeZattrsOutPath = new File(new File(path).getParent(), ".zattrs");
+			JsonObject zattsJson = new JsonObject();
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			zattsJson.add("multiscales",gson.toJsonTree(multiscales));
+			zattsJson.add("omero", gson.toJsonTree(omero));
+			try (FileWriter fw = new FileWriter(omeZattrsOutPath))
+			{
+				gson.toJson(zattsJson, fw);
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+				IOFunctions.println( "Failed to write ome zarr metadata to '" + omeZattrsOutPath + "': " + e );
+				return false;
+			}
 		}
 
 		//
