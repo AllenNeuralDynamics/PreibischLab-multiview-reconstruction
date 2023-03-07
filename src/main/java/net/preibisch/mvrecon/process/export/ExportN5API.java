@@ -34,7 +34,9 @@ import bdv.img.omezarr.Multiscales;
 import bdv.img.omezarr.Omero;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA;
 import org.janelia.saalfeldlab.n5.*;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Writer;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
@@ -277,22 +279,18 @@ public class ExportN5API implements ImgExport
 			multiscales.initOMEAxes(bb.numDimensions(), false, false);
 			Multiscales.Dataset s0 = new Multiscales.Dataset();
 			s0.path = datasetExtension.startsWith("/") || datasetExtension.startsWith("\\") ? datasetExtension.substring(1) : datasetExtension;
-			// Add transformations here
+			s0.setOMEIdentity(bb.numDimensions());
 			multiscales.setDatasets(Collections.singletonList(s0));
 			multiscales.name = title;
-			File omeZattrsOutPath = new File( new File( new File(path, baseDataset) , title ), ".zattrs" );
-			JsonObject zattsJson = new JsonObject();
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			zattsJson.add("multiscales",gson.toJsonTree(multiscales));
-			zattsJson.add("omero", gson.toJsonTree(omero));
-			try (FileWriter fw = new FileWriter(omeZattrsOutPath))
-			{
-				gson.toJson(zattsJson, fw);
-			}
-			catch (IOException e)
-			{
+			Gson gson = new Gson();
+			LinkedHashMap<String, JsonElement> attrs = new LinkedHashMap<>();
+			attrs.put(Multiscales.MULTI_SCALE_KEY, gson.toJsonTree(multiscales));
+			attrs.put(Omero.OMERO_KEY, gson.toJsonTree(omero));
+			try {
+				driverVolumeWriter.setAttributes(title, attrs);
+			} catch (IOException e) {
 				e.printStackTrace();
-				IOFunctions.println( "Failed to write ome zarr metadata to '" + omeZattrsOutPath + "': " + e );
+				IOFunctions.println( "Failed to write ome zarr metadata to '" + title + "': " + e );
 				return false;
 			}
 		}
