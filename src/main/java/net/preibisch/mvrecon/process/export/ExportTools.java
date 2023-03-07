@@ -390,9 +390,13 @@ public class ExportTools {
 		{
 			path = "t" + String.format("%05d", viewId.getTimePointId()) + "/" + "s" + String.format("%02d", viewId.getViewSetupId()) + "/0/cells";
 		}
+//		else if (StorageType.ZARR.equals(storageType))
+//		{
+//			path = String.format("fused_tp%05d_s%02d",viewId.getTimePointId(),viewId.getViewSetupId());
+//		}
 		else
 		{
-			new RuntimeException( "BDV-compatible dataset cannot be written for " + storageType + " (yet).");
+			throw new RuntimeException( "BDV-compatible dataset cannot be written for " + storageType + " (yet).");
 		}
 
 		System.out.println( "Saving BDV-compatible " + storageType + " using ViewSetupId=" + viewId.getViewSetupId() + ", TimepointId=" + viewId.getTimePointId()  );

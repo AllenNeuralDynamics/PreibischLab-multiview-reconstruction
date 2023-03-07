@@ -25,11 +25,8 @@ package net.preibisch.mvrecon.process.export;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.*;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -38,11 +35,7 @@ import bdv.img.omezarr.Omero;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import org.janelia.saalfeldlab.n5.Compression;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.GzipCompression;
-import org.janelia.saalfeldlab.n5.N5FSWriter;
-import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.*;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Writer;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.metadata.MultiscaleMetadata;
@@ -281,10 +274,13 @@ public class ExportN5API implements ImgExport
 			/*
 			Fill these structures with plausible image data here.
 			 */
+			multiscales.initOMEAxes(bb.numDimensions(), false, false);
 			Multiscales.Dataset s0 = new Multiscales.Dataset();
-			s0.path = "s0";
-
-			File omeZattrsOutPath = new File(new File(path).getParent(), ".zattrs");
+			s0.path = datasetExtension.startsWith("/") || datasetExtension.startsWith("\\") ? datasetExtension.substring(1) : datasetExtension;
+			// Add transformations here
+			multiscales.setDatasets(Collections.singletonList(s0));
+			multiscales.name = title;
+			File omeZattrsOutPath = new File( new File( new File(path, baseDataset) , title ), ".zattrs" );
 			JsonObject zattsJson = new JsonObject();
 			Gson gson = new GsonBuilder().setPrettyPrinting().create();
 			zattsJson.add("multiscales",gson.toJsonTree(multiscales));
@@ -626,11 +622,11 @@ public class ExportN5API implements ImgExport
 		else
 			ext = ".zarr";
 
-		if ( bdv && storageType == StorageType.ZARR )
-		{
-			IOFunctions.println( "BDV-compatible ZARR file not (yet) supported." );
-			return false;
-		}
+//		if ( bdv && storageType == StorageType.ZARR )
+//		{
+//			IOFunctions.println( "BDV-compatible ZARR file not (yet) supported." );
+//			return false;
+//		}
 
 		if ( bdv && storageType == StorageType.HDF5 && fusion.getPixelType() == 0 )
 		{
