@@ -283,9 +283,9 @@ public class ExportN5API implements ImgExport
 			multiscales.setDatasets(Collections.singletonList(s0));
 			multiscales.name = title;
 			Gson gson = new Gson();
-			LinkedHashMap<String, JsonElement> attrs = new LinkedHashMap<>();
-			attrs.put(Multiscales.MULTI_SCALE_KEY, gson.toJsonTree(multiscales));
-			attrs.put(Omero.OMERO_KEY, gson.toJsonTree(omero));
+			LinkedHashMap<String, Object> attrs = new LinkedHashMap<>();
+			attrs.put(Multiscales.MULTI_SCALE_KEY, multiscales);
+			attrs.put(Omero.OMERO_KEY, omero);
 			try {
 				driverVolumeWriter.setAttributes(title, attrs);
 			} catch (IOException e) {
