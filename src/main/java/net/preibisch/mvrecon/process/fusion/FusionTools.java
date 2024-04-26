@@ -215,7 +215,7 @@ public class FusionTools
 			final Collection< ? extends ViewId > views,
 			final Interval bb )
 	{
-		return fuseVirtual( imgloader, registrations, viewDescriptions, views, true, false, 1, bb, null );
+		return fuseVirtual( imgloader, registrations, viewDescriptions, views, true, false, false,  1, bb, null );
 	}
 
 	/**
@@ -251,7 +251,7 @@ public class FusionTools
 			final Interval bb,
 			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments )
 	{
-		return fuseVirtual( spimData, viewIds, true, false, 1, bb, intensityAdjustments );
+		return fuseVirtual( spimData, viewIds, true, false, false, 1, bb, intensityAdjustments );
 	}
 
 	public static RandomAccessibleInterval< FloatType > fuseVirtual(
@@ -259,6 +259,27 @@ public class FusionTools
 			final Collection< ? extends ViewId > views,
 			final boolean useBlending,
 			final boolean useContentBased,
+			final int interpolation,
+			final Interval boundingBox,
+			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments )
+	{
+		return fuseVirtual(
+				spimData,
+				views,
+				useBlending,
+				useContentBased,
+				false,
+				interpolation,
+				boundingBox,
+				intensityAdjustments );
+	}
+
+	public static RandomAccessibleInterval< FloatType > fuseVirtual(
+			final AbstractSpimData< ? > spimData,
+			final Collection< ? extends ViewId > views,
+			final boolean useBlending,
+			final boolean useContentBased,
+			final boolean useMax,
 			final int interpolation,
 			final Interval boundingBox,
 			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments )
@@ -276,7 +297,7 @@ public class FusionTools
 
 		final Map< ViewId, ? extends BasicViewDescription< ? > > viewDescriptions = spimData.getSequenceDescription().getViewDescriptions();
 
-		return fuseVirtual( imgLoader, registrations, viewDescriptions, views, useBlending, useContentBased, interpolation, boundingBox, intensityAdjustments );
+		return fuseVirtual( imgLoader, registrations, viewDescriptions, views, useBlending, useContentBased, useMax, interpolation, boundingBox, intensityAdjustments );
 	}
 
 	/**
@@ -379,6 +400,21 @@ public class FusionTools
 			final Collection< ? extends ViewId > views,
 			final boolean useBlending,
 			final boolean useContentBased,
+			final int interpolation,
+			final Interval boundingBox, // is already downsampled
+			//final double downsampling,
+			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments )
+	{
+		return fuseVirtual( imgloader, registrations, viewDescriptions, views, useBlending, useContentBased, false, interpolation, boundingBox, intensityAdjustments );
+	}
+	public static RandomAccessibleInterval< FloatType > fuseVirtual(
+			final BasicImgLoader imgloader,
+			final Map< ViewId, ? extends AffineTransform3D > registrations, // now contain the downsampling already
+			final Map< ViewId, ? extends BasicViewDescription< ? > > viewDescriptions,
+			final Collection< ? extends ViewId > views,
+			final boolean useBlending,
+			final boolean useContentBased,
+			final boolean useMax,
 			final int interpolation,
 			final Interval boundingBox, // is already downsampled
 			//final double downsampling,
@@ -549,8 +585,10 @@ public class FusionTools
 			}
 		}
 
-		return new FusedRandomAccessibleInterval( new FinalInterval( getFusedZeroMinInterval( bb ) ), images, weights );
-		//return new ValuePair<>( new FusedRandomAccessibleInterval( new FinalInterval( getFusedZeroMinInterval( bb ) ), images, weights ), bbTransform );
+		final FusedRandomAccessibleInterval fused_rai = new FusedRandomAccessibleInterval( new FinalInterval( getFusedZeroMinInterval( bb ) ), images, weights );
+		if (useMax)
+			fused_rai.setFusion(FusedRandomAccessibleInterval.Fusion.MAX);
+		return fused_rai;
 	}
 
 	@SuppressWarnings("unchecked")
