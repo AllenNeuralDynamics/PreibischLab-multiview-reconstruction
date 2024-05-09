@@ -280,6 +280,31 @@ public class FusionTools
 		return fuseVirtual( imgLoader, registrations, viewDescriptions, views, useBlending, useContentBased, interpolation, boundingBox, intensityAdjustments );
 	}
 
+	public static RandomAccessibleInterval< FloatType > fuseVirtual(
+			final AbstractSpimData< ? > spimData,
+			final Collection< ? extends ViewId > views,
+			final boolean useBlending,
+			final boolean useContentBased,
+			final int interpolation,
+			final Interval boundingBox,
+			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments, final FusedRandomAccessibleInterval.Fusion fusionType )
+	{
+		final BasicImgLoader imgLoader = spimData.getSequenceDescription().getImgLoader();
+
+		final HashMap< ViewId, AffineTransform3D > registrations = new HashMap<>();
+
+		for ( final ViewId viewId : views )
+		{
+			final ViewRegistration vr = spimData.getViewRegistrations().getViewRegistration( viewId );
+			vr.updateModel();
+			registrations.put( viewId, vr.getModel().copy() );
+		}
+
+		final Map< ViewId, ? extends BasicViewDescription< ? > > viewDescriptions = spimData.getSequenceDescription().getViewDescriptions();
+
+		return fuseVirtual( imgLoader, registrations, viewDescriptions, views, useBlending, useContentBased, interpolation, boundingBox, intensityAdjustments, fusionType );
+	}
+
 	/**
 	 * Creates an anisotropic bounding box by floor/ceil to include all data and provides the affine transformation to scale it to global coordinates
 	 * 
