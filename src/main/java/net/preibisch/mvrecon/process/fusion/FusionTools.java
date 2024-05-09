@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import bdv.util.ConstantRandomAccessible;
+import com.sun.org.apache.xpath.internal.objects.XNull;
 import ij.IJ;
 import ij.ImagePlus;
 import mpicbg.models.AffineModel1D;
@@ -382,7 +383,22 @@ public class FusionTools
 			final int interpolation,
 			final Interval boundingBox, // is already downsampled
 			//final double downsampling,
-			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments )
+			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments)
+	{
+		return fuseVirtual( imgloader, registrations, viewDescriptions, views, useBlending, useContentBased, interpolation, boundingBox, intensityAdjustments, null);
+	}
+
+	public static RandomAccessibleInterval< FloatType > fuseVirtual(
+			final BasicImgLoader imgloader,
+			final Map< ViewId, ? extends AffineTransform3D > registrations, // now contain the downsampling already
+			final Map< ViewId, ? extends BasicViewDescription< ? > > viewDescriptions,
+			final Collection< ? extends ViewId > views,
+			final boolean useBlending,
+			final boolean useContentBased,
+			final int interpolation,
+			final Interval boundingBox, // is already downsampled
+			//final double downsampling,
+			final Map< ? extends ViewId, AffineModel1D > intensityAdjustments, final FusedRandomAccessibleInterval.Fusion fusionType)
 	{
 		// go through the views and check if they are all 2-dimensional
 		final boolean is2d = is2d( views.stream().map( v -> viewDescriptions.get( v ) ).collect( Collectors.toList() ) );
@@ -548,8 +564,10 @@ public class FusionTools
 				weights.add( TransformView.transformView( imageArea, model, bb, 0, 0 ) );
 			}
 		}
-
-		return new FusedRandomAccessibleInterval( new FinalInterval( getFusedZeroMinInterval( bb ) ), images, weights );
+		final FusedRandomAccessibleInterval fused = new FusedRandomAccessibleInterval( new FinalInterval( getFusedZeroMinInterval( bb ) ), images, weights);
+		if (fusionType != null)
+			fused.setFusion(fusionType);
+		return fused;
 		//return new ValuePair<>( new FusedRandomAccessibleInterval( new FinalInterval( getFusedZeroMinInterval( bb ) ), images, weights ), bbTransform );
 	}
 
